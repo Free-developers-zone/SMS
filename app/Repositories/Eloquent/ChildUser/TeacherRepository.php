@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Repository\Eloquent\ChildUser;
+namespace App\Repositories\Eloquent\ChildUser;
 
 use App\Models\ChildUser\Teacher;
 use App\Repositories\Interfaces\ChildUser\TeacherInterface;
-use App\Repository\Base\BaseRepository;
+use App\Repositories\Base\BaseRepository;
 
 class TeacherRepository extends BaseRepository implements TeacherInterface
 {

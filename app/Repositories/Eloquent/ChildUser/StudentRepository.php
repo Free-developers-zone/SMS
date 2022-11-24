@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Repository\Eloquent\ChildUser;
+namespace App\Repositories\Eloquent\ChildUser;
 
 use App\Models\ChildUser\Student;
 use App\Repositories\Interfaces\ChildUser\StudentInterface;
-use App\Repository\Base\BaseRepository;
+use App\Repositories\Base\BaseRepository;
 
 class StudentRepository extends BaseRepository implements StudentInterface
 {

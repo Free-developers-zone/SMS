@@ -16,13 +16,12 @@ return new class extends Migration
         Schema::create('students', function (Blueprint $table) {
             $table->id();
             $table->string('reg_no')->unique();
-            $table->string('role_id');
             $table->string('name');
             $table->string('email')->unique();
             $table->string('password');
             $table->string('phone')->unique();
             $table->string('address');
-            $table->string('current_school')->nullable();
+            $table->foreignId('current_school')->nullable()->constrained('schools')->nullOnDelete();
             $table->timestamps();
         });
     }

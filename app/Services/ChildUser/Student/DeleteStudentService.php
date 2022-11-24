@@ -2,7 +2,7 @@
 
 namespace App\Services\ChildUser\Student;
 
-use App\Repository\Eloquent\ChildUser\StudentRepository;
+use App\Repositories\Eloquent\ChildUser\StudentRepository;
 
 class DeleteStudentService
 {
@@ -13,5 +13,14 @@ class DeleteStudentService
     public function __construct(StudentRepository $studentRepository)
     {
         $this->studentRepository = $studentRepository;
+    }
+    /**
+     * @param int $id
+     *
+     * @return [type]
+     */
+    public function delete(int $id)
+    {
+        $this->studentRepository->deleteById($id);
     }
 }

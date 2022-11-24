@@ -18,4 +18,11 @@ class Student extends Model
         'address',
         'current_school',
     ];
+    /**
+     * @return [type]
+     */
+    public function school()
+    {
+        return $this->belongsTo(School::class);
+    }
 }

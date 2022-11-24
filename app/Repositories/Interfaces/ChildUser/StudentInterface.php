@@ -2,7 +2,7 @@
 
 namespace App\Repositories\Interfaces\ChildUser;
 
-use App\Repository\Base\EloquentRepositoryInterface;
+use App\Repositories\Base\EloquentRepositoryInterface;
 
 interface StudentInterface extends EloquentRepositoryInterface
 {

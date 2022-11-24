@@ -17,7 +17,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->string('reg_no');
-            $table->foreignId('role_id')->constrained('user_roles')->nullOnDelete();
+            $table->foreignId('role_id')->constrained('user_roles')->cascadeOnDelete();
             $table->string('first_name');
             $table->string('last_name');
             $table->string('NIC');

@@ -2,7 +2,7 @@
 
 namespace App\Repositories\Interfaces\User;
 
-use App\Repository\Base\EloquentRepositoryInterface;
+use App\Repositories\Base\EloquentRepositoryInterface;
 
 interface UserRoleRepositoryInterface extends EloquentRepositoryInterface
 {
