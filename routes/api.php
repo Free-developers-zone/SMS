@@ -24,7 +24,7 @@ Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
 Route::prefix('role')->controller(UserRoleController::class)->group(function () {
     Route::get('/', 'getRole');
     Route::post('/create', 'createRole');
-    Route::put('/update/{id}', 'updateRole');
+    Route::post('/update/{id}', 'updateRole');
     Route::delete('/{id}/delete', 'deleteRole');
 });
 // student
