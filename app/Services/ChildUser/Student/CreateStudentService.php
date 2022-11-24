@@ -2,7 +2,7 @@
 
 namespace App\Services\ChildUser\Student;
 
-use App\Repository\Eloquent\ChildUser\StudentRepository;
+use App\Repositories\Eloquent\ChildUser\StudentRepository;
 
 class CreateStudentService
 {
@@ -13,5 +13,14 @@ class CreateStudentService
     public function __construct(StudentRepository $studentRepository)
     {
         $this->studentRepository = $studentRepository;
+    }
+    /**
+     * @param mixed $request
+     *
+     * @return [type]
+     */
+    public function create($request)
+    {
+        return $this->studentRepository->create($request->all());
     }
 }

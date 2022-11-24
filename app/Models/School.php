@@ -1,23 +1,28 @@
 <?php
 
-namespace App\Models\User;
+namespace App\Models;
 
-use App\Models\ChildUser\Administration;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-class UserRole extends Model
+class School extends Model
 {
     use HasFactory;
-    const STATUS = [
-        'active' => 1,
-        'inactive' => 0,
-    ];
     protected $fillable = [
-        'role',
+        'name',
+        'slug',
+        'student_capacity',
+        'teacher_capacity',
+        'phone',
+        'email',
+        'address',
+        'state',
+        'province',
+        'district',
+        'zone',
+        'division',
         'description',
-        'status',
     ];
     /**
      * @return [type]
@@ -26,30 +31,30 @@ class UserRole extends Model
     {
         parent::boot();
         // registering a callback to be executed upon the creation of an activity AR
-        static::creating(function ($user_role) {
+        static::creating(function ($name) {
             // produce a slug based on the activity title
-            $slug = Str::slug($user_role->role);
+            $slug = Str::slug($name->name);
             // check to see if any other slugs exist that are the same & count them
             $count = static::whereRaw("slug RLIKE '^{$slug}(-[0-9]+)?$'")->count();
             // if other slugs exist that are the same, append the count to the slug
-            $user_role->slug = $count ? "{$slug}-{$count}" : $slug;
+            $name->slug = $count ? "{$slug}-{$count}" : $slug;
         });
         // registering a callback to be executed upon the creation of an activity AR
-        static::updating(function ($user_role) {
+        static::updating(function ($name) {
             // produce a slug based on the activity title
-            $slug = Str::slug($user_role->role);
+            $slug = Str::slug($name->name);
             // check to see if any other slugs exist that are the same & count them
             $count = static::whereRaw("slug RLIKE '^{$slug}(-[0-9]+)?$'")->count();
             // if other slugs exist that are the same, append the count to the slug
-            $user_role->slug = $count ? "{$slug}-{$count}" : $slug;
+            $name->slug = $count ? "{$slug}-{$count}" : $slug;
         });
     }
     /**
      * @return [type]
      */
-    public function users()
+    public function students()
     {
-        return $this->hasMany(User::class);
+        return $this->hasMany(Student::class);
     }
     /**
      * @return [type]
@@ -58,12 +63,4 @@ class UserRole extends Model
     {
         return $this->hasMany(Teacher::class);
     }
-    /**
-     * @return [type]
-     */
-    public function administration()
-    {
-        return $this->hasMany(Administration::class);
-    }
-
 }

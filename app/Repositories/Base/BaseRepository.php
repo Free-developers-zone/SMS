@@ -1,446 +1,224 @@
 <?php
 
-namespace App\Repository\Base;
+namespace App\Repositories\Base;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Http\Request;
-use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Collection;
 
-abstract class BaseRepository implements EloquentRepositoryInterface
+class BaseRepository implements EloquentRepositoryInterface
 {
     /**
-     * The repository associated main model.
-     *
-     * @var \Illuminate\Database\Eloquent\Model
+     * @var Model
      */
     protected $model;
-    /**
-     * The repository associated request.
-     *
-     * @var \Illuminate\Http\Request
-     */
-    protected $request;
-    /**
-     * Default attributes to automatically except from request treatments.
-     *
-     * @var array
-     */
-    protected $defaultAttributesToExcept = ['_token', '_method'];
-    /**
-     * Automatically except defined $defaultAttributesToExcept from the request treatments.
-     *
-     * @var boolean
-     */
-    protected $exceptDefaultAttributes = true;
 
     /**
      * BaseRepository constructor.
+     *
+     * @param  Model  $model
      */
-    public function __construct()
+    public function __construct(Model $model)
     {
-        if ($this->model) {
-            $this->setModel($this->model);
-        }
-        $this->setRequest(request());
+        $this->model = $model;
     }
-
+    // ss
     /**
-     * Set the repository request to use.
-     *
-     * @param \Illuminate\Http\Request $request
-     *
-     * @return \Okipa\LaravelBaseRepository\BaseRepository
+     * @param  array  $columns
+     * @param  array  $relations
+     * @return Collection
      */
-    public function setRequest(Request $request): BaseRepository
+    public function all(array $columns = ['*'], array $relations = []): Collection
     {
-        $this->request = $request;
-
-        return $this;
+        return $this->model->with($relations)->get($columns);
     }
 
     /**
-     * Create multiple model instances from the request data.
-     * The use of this method suppose that your request is correctly formatted.
-     * If not, you can use the $exceptFromSaving and $addToSaving attributes to do so.
+     * Method limit
      *
-     * @param array $attributesToAddOrReplace (dot notation accepted)
-     * @param array $attributesToExcept       (dot notation accepted)
-     * @param bool  $saveMissingModelFillableAttributesToNull
+     * @param array $columns [required columns]
+     * @param int $limit [limit]
+     * @param array $relations [required relations]
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return Collection
      */
-    public function createOrUpdateMultipleFromRequest(
-        array $attributesToAddOrReplace = [],
-        array $attributesToExcept = [],
-        bool $saveMissingModelFillableAttributesToNull = true
-    ): Collection {
-        $this->exceptAttributesFromRequest($attributesToExcept);
-        $this->addOrReplaceAttributesInRequest($attributesToAddOrReplace);
-
-        return $this->createOrUpdateMultipleFromArray($this->request->all(), $saveMissingModelFillableAttributesToNull);
-    }
-
-    /**
-     * Except attributes from request.
-     *
-     * @param array $attributesToExcept (dot notation accepted)
-     *
-     * @return void
-     */
-    protected function exceptAttributesFromRequest(array $attributesToExcept = [])
+    public function limit(array $columns = ['*'], int $limit, array $relations = []): Collection
     {
-        if ($this->exceptDefaultAttributes) {
-            $attributesToExcept = array_merge($this->defaultAttributesToExcept, $attributesToExcept);
-        }
-        $this->request->replace($this->request->except($attributesToExcept));
+        return $this->model->with($relations)->limit($limit)->get($columns);
     }
 
     /**
-     * Add or replace attributes in request.
+     * Method paginate
      *
-     * @param array $attributesToAddOrReplace (dot notation accepted)
-     *
-     * @return void
+     * @param  int  $number [number of records per page]
+     * @return
      */
-    protected function addOrReplaceAttributesInRequest(array $attributesToAddOrReplace = [])
+    public function paginate(int $number)
     {
-        $attributesToAddOrReplaceArray = [];
-        foreach ($attributesToAddOrReplace as $key => $value) {
-            array_set($attributesToAddOrReplaceArray, $key, $value);
-        }
-        $newRequestAttributes = array_replace_recursive($this->request->all(), $attributesToAddOrReplaceArray);
-        $this->request->replace($newRequestAttributes);
+        return $this->model->paginate($number);
     }
 
     /**
-     * Create one or more model instances from data array.
-     * The use of this method suppose that your array is correctly formatted.
+     * Get all trashed models.
      *
-     * @param array $data
-     * @param bool  $saveMissingModelFillableAttributesToNull
-     *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return Collection
      */
-    public function createOrUpdateMultipleFromArray(
-        array $data,
-        bool $saveMissingModelFillableAttributesToNull = true
-    ): Collection {
-        $models = new Collection();
-        foreach ($data as $instanceData) {
-            $models->push($this->createOrUpdateFromArray($instanceData, $saveMissingModelFillableAttributesToNull));
-        }
-
-        return $models;
-    }
-
-    /**
-     * Create or update a model instance from data array.
-     * The use of this method suppose that your array is correctly formatted.
-     *
-     * @param array $data
-     * @param bool  $saveMissingModelFillableAttributesToNull
-     *
-     * @return \Illuminate\Database\Eloquent\Model
-     */
-    public function createOrUpdateFromArray(array $data, bool $saveMissingModelFillableAttributesToNull = true): Model
+    public function allTrashed(): Collection
     {
-        $primary = $this->getModelPrimaryFromArray($data);
-
-        return $primary
-            ? $this->updateByPrimary($primary, $data, $saveMissingModelFillableAttributesToNull)
-            : $this->getModel()->create($data);
+        return $this->model->onlyTrashed()->get();
     }
 
     /**
-     * Get model primary value from a data array.
+     * Find model by id.
      *
-     * @param array $data
-     *
-     * @return mixed
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
+     * @param  int  $modelId
+     * @param  array  $columns
+     * @param  array  $relations
+     * @param  array  $appends
+     * @return Model
      */
-    protected function getModelPrimaryFromArray(array $data)
+    public function findById(
+        int $modelId,
+        array $columns = ['*'],
+        array $relations = [],
+        array $appends = []
+    ): ?Model {
+        return $this->model->select($columns)->with($relations)->findOrFail($modelId)->append($appends);
+    }
+    /**
+     * Find model by id.
+     *
+     * @param  array  $modelId
+     * @param  array  $columns
+     * @param  array  $relations
+     * @param  array  $appends
+     * @return Model
+     */
+    public function findByColumn(
+        array $paramsAnddData,
+        array $columns = ['*'],
+        array $relations = []
+    ): ?Model {
+        return $this->model->select($columns)->with($relations)->where($paramsAnddData)->first();
+    }
+    /**
+     * Find model by columns.
+     *
+     * @param  array  $modelId
+     * @param  array  $columns
+     * @param  array  $relations
+     * @param  array  $appends
+     * @return Collection
+     */
+    public function getByColumn(
+        array $paramsAnddData,
+        array $columns = ['*'],
+        array $relations = []
+    ): ?Collection {
+        return $this->model->select($columns)->with($relations)->where($paramsAnddData)->get();
+    }
+    /**
+     * Find model by existsByColumn.
+     *
+     * @param  array  $modelId
+     * @param  array  $columns
+     * @return Boolean
+     */
+    public function existsByColumn(
+        array $paramsAnddData,
+        array $columns = ['*']
+    ): ?Bool {
+        return $this->model->select($columns)->where($paramsAnddData)->exists();
+    }
+
+    /**
+     * Find trashed model by id.
+     *
+     * @param  int  $modelId
+     * @return Model
+     */
+    public function findTrashedById(int $modelId): ?Model
     {
-        return array_get($data, $this->getModel()->getKeyName());
+        return $this->model->withTrashed()->findOrFail($modelId);
     }
 
     /**
-     * Get the repository model.
+     * Find only trashed model by id.
      *
-     * @return \Illuminate\Database\Eloquent\Model
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
+     * @param  int  $modelId
+     * @return Model
      */
-    protected function getModel(): Model
+    public function findOnlyTrashedById(int $modelId): ?Model
     {
-        if ($this->model instanceof Model) {
-            return $this->model;
-        }
-        throw new ModelNotFoundException(
-            'You must declare your repository $model attribute with an Illuminate\Database\Eloquent\Model '
-                . 'namespace to use this feature.'
-        );
+        return $this->model->onlyTrashed()->findOrFail($modelId);
     }
 
     /**
-     * Set the repository model class to instantiate.
+     * Create a model.
      *
-     * @param string $modelClass
-     *
-     * @return \Okipa\LaravelBaseRepository\BaseRepository
+     * @param  array  $payload
+     * @return Model
      */
-    public function setModel(string $modelClass): BaseRepository
+    public function create(array $payload): ?Model
     {
-        $this->model = app($modelClass);
+        $model = $this->model->create($payload);
 
-        return $this;
+        return $model->fresh();
     }
 
     /**
-     * Update a model instance from its primary key.
+     * Method createMany
      *
-     * @param int   $primary
-     * @param array $data
-     * @param bool  $saveMissingModelFillableAttributesToNull
-     *
-     * @return \Illuminate\Database\Eloquent\Model
+     * @param  array  $payloadCollection [collection of payload]
+     * @return Collection
      */
-    public function updateByPrimary(
-        int $primary,
-        array $data,
-        bool $saveMissingModelFillableAttributesToNull = true
-    ): Model {
-        $instance = $this->getModel()->findOrFail($primary);
-        $data = $saveMissingModelFillableAttributesToNull ? $this->setMissingFillableAttributesToNull($data) : $data;
-        $instance->update($data);
-
-        return $instance;
-    }
-
-    /**
-     * Add the missing model fillable attributes with a null value.
-     *
-     * @param array $data
-     *
-     * @return array
-     */
-    public function setMissingFillableAttributesToNull(array $data): array
+    public function createMany(array $payloadCollection): ?Collection
     {
-        $fillableAttributes = $this->getModel()->getFillable();
-        $dataWithMissingAttributesToNull = [];
-        foreach ($fillableAttributes as $fillableAttribute) {
-            $dataWithMissingAttributesToNull[$fillableAttribute] =
-                isset($data[$fillableAttribute]) ? $data[$fillableAttribute] : null;
-        }
-
-        return $dataWithMissingAttributesToNull;
+        return $this->model->createMany($payloadCollection);
     }
 
     /**
-     * Create or update a model instance from the request data.
-     * The use of this method suppose that your request is correctly formatted.
-     * If not, you can use the $exceptFromSaving and $addToSaving attributes to do so.
+     * Update existing model.
      *
-     * @param array $attributesToAddOrReplace (dot notation accepted)
-     * @param array $attributesToExcept       (dot notation accepted)
-     * @param bool  $saveMissingModelFillableAttributesToNull
-     *
-     * @return \Illuminate\Database\Eloquent\Model
-     */
-    public function createOrUpdateFromRequest(
-        array $attributesToAddOrReplace = [],
-        array $attributesToExcept = [],
-        bool $saveMissingModelFillableAttributesToNull = true
-    ): Model {
-        $this->exceptAttributesFromRequest($attributesToExcept);
-        $this->addOrReplaceAttributesInRequest($attributesToAddOrReplace);
-
-        return $this->createOrUpdateFromArray($this->request->all(), $saveMissingModelFillableAttributesToNull);
-    }
-
-    /**
-     * Delete a model instance from the request data.
-     *
-     * @param array $attributesToAddOrReplace (dot notation accepted)
-     * @param array $attributesToExcept       (dot notation accepted)
-     *
-     * @return bool|null
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
-     */
-    public function deleteFromRequest(array $attributesToAddOrReplace = [], array $attributesToExcept = [])
-    {
-        $this->exceptAttributesFromRequest($attributesToExcept);
-        $this->addOrReplaceAttributesInRequest($attributesToAddOrReplace);
-
-        return $this->deleteFromArray($this->request->all());
-    }
-
-    /**
-     * Delete a model instance from a data array.
-     *
-     * @param array $data
-     *
+     * @param  int  $modelId
+     * @param  array  $payload
      * @return bool
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
      */
-    public function deleteFromArray(array $data): bool
+    public function update(int $modelId, array $payload): bool
     {
-        $primary = $this->getModelPrimaryFromArray($data);
+        $model = $this->findById($modelId);
 
-        return $this->getModel()->findOrFail($primary)->delete();
+        return $model->update($payload);
+    }
+    /**
+     * Delete model by id.
+     *
+     * @param  int  $modelId
+     * @return bool
+     */
+    public function deleteById(int $modelId): bool
+    {
+        return $this->findById($modelId)->delete();
     }
 
     /**
-     * Delete a model instance from its primary key.
+     * Restore model by id.
      *
-     * @param int $primary
-     *
-     * @return bool|null
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
+     * @param  int  $modelId
+     * @return bool
      */
-    public function deleteByPrimary(int $primary)
+    public function restoreById(int $modelId): bool
     {
-        return $this->getModel()->findOrFail($primary)->delete();
+        return $this->findOnlyTrashedById($modelId)->restore();
     }
 
     /**
-     * Delete multiple model instances from their primary keys.
+     * Permanently delete model by id.
      *
-     * @param array $instancePrimaries
-     *
-     * @return int
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
+     * @param  int  $modelId
+     * @return bool
      */
-    public function deleteMultipleFromPrimaries(array $instancePrimaries): int
+    public function permanentlyDeleteById(int $modelId): bool
     {
-        return $this->getModel()->destroy($instancePrimaries);
-    }
-
-    /**
-     * Paginate array results.
-     *
-     * @param array $data
-     * @param int   $perPage
-     *
-     * @return \Illuminate\Pagination\LengthAwarePaginator
-     */
-    public function paginateArrayResults(array $data, int $perPage = 20): LengthAwarePaginator
-    {
-        $page = $this->request->input('page', 1);
-        $offset = ($page * $perPage) - $perPage;
-
-        return new LengthAwarePaginator(
-            array_slice($data, $offset, $perPage, false),
-            count($data),
-            $perPage,
-            $page,
-            [
-                'path'  => $this->request->url(),
-                'query' => $this->request->query(),
-            ]
-        );
-    }
-
-    /**
-     * Find one model instance from its primary key value.
-     *
-     * @param int  $primary
-     * @param bool $throwsExceptionIfNotFound
-     *
-     * @return \Illuminate\Database\Eloquent\Model|null
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
-     */
-    public function findOneByPrimary(int $primary, $throwsExceptionIfNotFound = true)
-    {
-        return $throwsExceptionIfNotFound
-            ? $this->getModel()->findOrFail($primary)
-            : $this->getModel()->find($primary);
-    }
-
-    /**
-     * Find one model instance from an associative array.
-     *
-     * @param array $data
-     * @param bool  $throwsExceptionIfNotFound
-     *
-     * @return \Illuminate\Database\Eloquent\Model|null
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
-     */
-    public function findOneFromArray(array $data, $throwsExceptionIfNotFound = true)
-    {
-        return $throwsExceptionIfNotFound
-            ? $this->getModel()->where($data)->firstOrFail()
-            : $this->getModel()->where($data)->first();
-    }
-
-    /**
-     * Find multiple model instances from a « where » parameters array.
-     *
-     * @param array $data
-     *
-     * @return \Illuminate\Database\Eloquent\Collection
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
-     */
-    public function findMultipleFromArray(array $data): Collection
-    {
-        return $this->getModel()->where($data)->get();
-    }
-
-    /**
-     * Get all model instances from database.
-     *
-     * @param array  $columns
-     * @param string $orderBy
-     * @param string $orderByDirection
-     *
-     * @return \Illuminate\Database\Eloquent\Collection
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
-     */
-    public function getAll($columns = ['*'], string $orderBy = 'default', string $orderByDirection = 'asc'): Collection
-    {
-        $orderBy = $orderBy === 'default' ? $this->getModel()->getKeyName() : $orderBy;
-
-        return $this->getModel()->orderBy($orderBy, $orderByDirection)->get($columns);
-    }
-
-    /**
-     * Instantiate a model instance with an attributes array.
-     *
-     * @param array $data
-     *
-     * @return \Illuminate\Database\Eloquent\Model
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
-     */
-    public function make(array $data): Model
-    {
-        return app($this->getModel()->getMorphClass())->fill($data);
-    }
-
-    /**
-     * Get the model unique storage instance or create one.
-     *
-     * @return \Illuminate\Database\Eloquent\Model
-     */
-    public function modelUniqueInstance(): Model
-    {
-        $modelInstance = $this->getModel()->first();
-        if (!$modelInstance) {
-            $modelInstance = $this->getModel()->create([]);
-        }
-
-        return $modelInstance;
-    }
-
-    /**
-     * Find multiple model instances from an array of ids.
-     *
-     * @param array $primaries
-     *
-     * @return \Illuminate\Database\Eloquent\Collection
-     */
-    public function findMultipleFromPrimaries(array $primaries): Collection
-    {
-        return $this->getModel()->findMany($primaries);
+        return $this->findTrashedById($modelId)->forceDelete();
     }
 }
