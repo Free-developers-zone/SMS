@@ -11,9 +11,7 @@ class Student extends Model
     use HasFactory, Metable;
     protected $fillable = [
         'reg_no',
-        'name',
-        'email',
-        'password',
+        'user_id',
         'phone',
         'address',
         'current_school',

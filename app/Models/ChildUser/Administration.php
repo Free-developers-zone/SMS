@@ -11,10 +11,8 @@ class Administration extends Model
     use HasFactory, Metable;
     protected $fillable = [
         'reg_no',
+        'user_id',
         'role_id',
-        'name',
-        'email',
-        'password',
         'phone',
         'address',
     ];
