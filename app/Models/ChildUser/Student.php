@@ -23,4 +23,11 @@ class Student extends Model
     {
         return $this->belongsTo(School::class);
     }
+    /**
+     * @return [type]
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

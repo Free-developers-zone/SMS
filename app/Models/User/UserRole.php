@@ -51,19 +51,5 @@ class UserRole extends Model
     {
         return $this->hasMany(User::class);
     }
-    /**
-     * @return [type]
-     */
-    public function teachers()
-    {
-        return $this->hasMany(Teacher::class);
-    }
-    /**
-     * @return [type]
-     */
-    public function administration()
-    {
-        return $this->hasMany(Administration::class);
-    }
 
 }

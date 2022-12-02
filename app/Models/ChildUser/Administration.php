@@ -16,4 +16,11 @@ class Administration extends Model
         'phone',
         'address',
     ];
+    /**
+     * @return [type]
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }
